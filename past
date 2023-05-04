@@ -1,0 +1,81 @@
+#!/bin/bash
+
+FILE_OR_DIR="$(cat /tmp/target_content)"
+
+if [ -z "$FILE_OR_DIR" ];then
+  echo "Usage:"
+  echo "    past file_or_dir"
+  echo
+  echo "without deleting the original"
+
+  exit 1
+elif ! [ -e "$FILE_OR_DIR" ];then
+  echo "$FILE_OR_DIR is not exist"
+  exit 1
+fi
+
+
+# multi files not supported
+if [ $# -gt 1 ];then
+  echo "support only one file/dir"
+  exit 1
+fi
+
+# handel
+# past dir/old_dir/new_file.txt
+# past dir/new_dir
+
+echo ---
+TO="${1:-}"
+if [ -z "$TO" ];then
+  TO="."
+# test if partent dir exist
+elif realpath "$TO" >/dev/null ;then
+  if [ -e "$(dirname "$(realpath "$TO")")" ];then
+    # test if $TO exist
+    if [ -e "$TO" ];then
+     # test if $TO touchable
+     if touch "$TO";then
+       # pass
+       :
+     # $TO does not touchable
+     else
+      echo "need root to copy in this dir"
+      exit 1
+     fi
+    # $TO does not exist
+    # INFO: this step could change name from "$FILE_OR_DIR" => "$TO"
+    else
+      # we want to create file/dir automatically
+      # check if we need root
+      # check if we have file a dir
+      # if [ -d "$FILE_OR_DIR" ];then
+      #     : # is a dir
+      #     # if ! mkdir "$TO"
+      #     #     echo "need root to mkdir "$TO""
+      #     #     exit 1
+      #     # fi
+      # else
+      #     : # is a file
+      #     # if ! touch "$TO"
+      #     #     echo "need root to touch "$TO""
+      #     #     exit 1
+      #     # fi
+      # fi
+      echo "not implinented: creating new dir/file"
+      exit 1
+    fi
+  else
+    echo "dirname err"
+    exit 1
+  fi
+
+# partent dir does not exist
+else
+  exit 1
+fi
+
+
+# Get the common ancestor directory
+FROM="$(realpath --relative-to="$(pwd)" "$FILE_OR_DIR")"
+echo "cp -ivr ${FROM} ${TO}"
